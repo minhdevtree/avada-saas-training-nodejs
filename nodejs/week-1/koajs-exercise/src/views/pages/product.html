@@ -1,0 +1,26 @@
+<div class="container">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th scope="col">ID</th>
+        <th scope="col">Name</th>
+        <th scope="col">Price</th>
+        <th scope="col">Product</th>
+        <th scope="col">Color</th>
+        <th scope="col">Created at</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% products.forEach(function (product) {%>
+      <tr>
+        <th scope="row"><%= product.id %></th>
+        <td><%= product.name %></td>
+        <td><%= product.price %></td>
+        <td><%= product.product %></td>
+        <td><%= product.color %></td>
+        <td><%= new Date(product.createdAt).toLocaleDateString() %></td>
+      </tr>
+      <% })%>
+    </tbody>
+  </table>
+</div>
