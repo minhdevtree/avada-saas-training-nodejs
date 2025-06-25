@@ -9,17 +9,33 @@ import {
 import { DeleteIcon } from '@shopify/polaris-icons';
 import { useTodos } from '../../providers/TodoProvider';
 import TodoItem from './TodoItem';
+import { removeTodo, updateTodo } from '../../lib/action';
 
 export default function TodoList() {
-  const { todos, updateTodo, removeTodo, loading } = useTodos();
+  const { todos, update, remove, loading } = useTodos();
   const [selectedItems, setSelectedItems] = useState([]);
+  const [loadingActions, setLoadingActions] = useState(false);
 
   const handleCompleteTodo = async (id, isCompleted) => {
-    await updateTodo(id, { isCompleted });
+    setLoadingActions(true);
+    updateTodo(id, { isCompleted })
+      .then(updatedTodo => {
+        update(updatedTodo);
+      })
+      .finally(() => {
+        setLoadingActions(false);
+      });
   };
 
   const handleRemoveTodo = async id => {
-    await removeTodo(id);
+    setLoadingActions(true);
+    removeTodo(id)
+      .then(() => {
+        remove(id);
+      })
+      .finally(() => {
+        setLoadingActions(false);
+      });
   };
 
   const resourceName = {
@@ -85,7 +101,7 @@ export default function TodoList() {
           selectedItems={selectedItems}
           onSelectionChange={setSelectedItems}
           bulkActions={bulkActions}
-          loading={loading}
+          loading={loading || loadingActions}
         />
       </Card>
     </BlockStack>

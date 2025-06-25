@@ -1,12 +1,14 @@
-import { Button, Modal, TextField } from '@shopify/polaris';
+import { Button, Modal, Spinner, TextField } from '@shopify/polaris';
 import { useState, useCallback } from 'react';
 import { useTodos } from '../../providers/TodoProvider';
+import { addTodo } from '../../lib/action';
 
 export default function CreateTodo() {
   const [active, setActive] = useState(false);
   const [title, setTitle] = useState('');
   const [error, setError] = useState(null);
-  const { addTodo } = useTodos();
+  const [loading, setLoading] = useState(false);
+  const { add } = useTodos();
 
   const handleChange = useCallback(() => {
     setActive(!active);
@@ -35,15 +37,23 @@ export default function CreateTodo() {
       setError('Title must be at most 100 characters.');
       return;
     }
-
-    await addTodo(title.trim());
-    setTitle('');
-    setError(null);
-    setActive(false);
+    setLoading(true);
+    addTodo(title.trim())
+      .then(newTodo => {
+        add(newTodo);
+        setActive(false);
+      })
+      .catch(err => {
+        setError(err.message || 'Failed to create todo');
+      })
+      .finally(() => {
+        setTitle('');
+        setLoading(false);
+      });
   };
 
   const activator = (
-    <Button variant="primary" onClick={handleChange}>
+    <Button variant="primary" onClick={handleChange} disabled={loading}>
       Create
     </Button>
   );
@@ -57,6 +67,10 @@ export default function CreateTodo() {
       primaryAction={{
         content: 'Add',
         onAction: handleAddTodo,
+        disabled: loading,
+        loading: loading && (
+          <Spinner accessibilityLabel="Loading..." size="small" />
+        ),
       }}
       secondaryActions={[
         {

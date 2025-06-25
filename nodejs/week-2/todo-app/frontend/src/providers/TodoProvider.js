@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import useFetchApi from '../hooks/useFetchApi';
-
-const BASE_API_URL = 'http://localhost:5000/api';
+import { BASE_API_URL } from '../lib/const';
 
 const TodoContext = createContext();
 
@@ -17,44 +16,19 @@ export function TodoProvider({ children }) {
     }
   }, [data]);
 
-  const request = async (url, options = {}) => {
-    try {
-      const response = await fetch(url, options);
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Something went wrong');
-      }
-      return await response.json();
-    } catch (err) {
-      console.error('API Error:', err.message);
-      throw err;
-    }
+  const add = async todo => {
+    setTodos(prev => [...prev, todo]);
   };
 
-  const addTodo = async text => {
-    const result = await request(`${BASE_API_URL}/todos`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    });
-    setTodos(prev => [...prev, result.data]);
-  };
-
-  const updateTodo = async (id, updatedFields) => {
-    const result = await request(`${BASE_API_URL}/todos/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedFields),
-    });
+  const update = async updateTodo => {
     setTodos(prev =>
-      prev.map(todo => (todo.id === id ? { ...todo, ...result.data } : todo))
+      prev.map(todo =>
+        todo.id === updateTodo.id ? { ...todo, ...updateTodo } : todo
+      )
     );
   };
 
-  const removeTodo = async id => {
-    await request(`${BASE_API_URL}/todos/${id}`, {
-      method: 'DELETE',
-    });
+  const remove = async id => {
     setTodos(prev => prev.filter(todo => todo.id !== id));
   };
 
@@ -63,9 +37,9 @@ export function TodoProvider({ children }) {
       value={{
         todos,
         loading,
-        addTodo,
-        updateTodo,
-        removeTodo,
+        add,
+        update,
+        remove,
       }}
     >
       {children}
