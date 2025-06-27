@@ -7,9 +7,9 @@ import {
   EmptyState,
 } from '@shopify/polaris';
 import { DeleteIcon } from '@shopify/polaris-icons';
-import { useTodos } from '../../providers/TodoProvider';
+import { useTodos } from '../../contexts/TodoContext';
 import TodoItem from './TodoItem';
-import { removeTodo, updateTodo } from '../../lib/action';
+import { removeTodo, updateTodo } from '../../actions/todoActions';
 
 export default function TodoList() {
   const { todos, update, remove, loading } = useTodos();
@@ -22,6 +22,9 @@ export default function TodoList() {
       .then(updatedTodo => {
         update(updatedTodo);
       })
+      .catch(err => {
+        console.error('Error updating todo:', err);
+      })
       .finally(() => {
         setLoadingActions(false);
       });
@@ -32,6 +35,9 @@ export default function TodoList() {
     removeTodo(id)
       .then(() => {
         remove(id);
+      })
+      .catch(err => {
+        console.error('Error remove todo:', err);
       })
       .finally(() => {
         setLoadingActions(false);

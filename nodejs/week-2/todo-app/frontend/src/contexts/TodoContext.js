@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import useFetchApi from '../hooks/useFetchApi';
-import { BASE_API_URL } from '../lib/const';
+import useFetchApi from '../hooks/api/useFetchApi';
+import { BASE_API_URL } from '../config/link';
 
 const TodoContext = createContext();
 
@@ -8,6 +8,7 @@ export function TodoProvider({ children }) {
   const [todos, setTodos] = useState([]);
   const { data, loading } = useFetchApi({
     url: `${BASE_API_URL}/todos`,
+    defaultResponse: { todos: [] },
   });
 
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { Button, Modal, Spinner, TextField } from '@shopify/polaris';
 import { useState, useCallback } from 'react';
-import { useTodos } from '../../providers/TodoProvider';
-import { addTodo } from '../../lib/action';
+import { useTodos } from '../../contexts/TodoContext';
+import { addTodo } from '../../actions/todoActions';
 
 export default function CreateTodo() {
   const [active, setActive] = useState(false);

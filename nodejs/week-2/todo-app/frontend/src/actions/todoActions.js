@@ -1,11 +1,14 @@
-import { BASE_API_URL } from './const';
+import { BASE_API_URL } from '../config/link';
 
-const request = async (url, options = {}) => {
+const request = async (url, options = {}, defaultResponse = null) => {
   try {
     const response = await fetch(url, options);
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Something went wrong');
+      if (!defaultResponse) {
+        throw new Error(errorData.message || 'Something went wrong');
+      }
+      return defaultResponse;
     }
     return await response.json();
   } catch (err) {
