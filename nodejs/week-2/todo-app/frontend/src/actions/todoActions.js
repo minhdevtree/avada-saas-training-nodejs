@@ -52,7 +52,6 @@ export const removeManyTodos = async ids => {
 };
 
 export const updateManyTodos = async updates => {
-  console.log('Updating many todos:', updates.length);
   const result = await request(`${BASE_API_URL}/todos/updateMany`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },

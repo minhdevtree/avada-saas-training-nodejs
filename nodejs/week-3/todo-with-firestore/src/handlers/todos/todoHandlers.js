@@ -4,8 +4,15 @@ const {
   add: addTodo,
   update: updateTodo,
   remove: removeTodo,
+  removeMany: removeTodos,
+  updateMany: updateTodos,
 } = require('../../database/todoRepository');
 
+/**
+ * Fetch all todos from the database.
+ * @param {*} ctx Koa context object
+ * @returns {Promise<void>} Returns a promise that resolves when the todos are fetched.
+ */
 async function getTodos(ctx) {
   try {
     const todos = await getAllTodos();
@@ -23,6 +30,11 @@ async function getTodos(ctx) {
   }
 }
 
+/**
+ * Fetch a single todo by its ID.
+ * @param {*} ctx Koa context object
+ * @returns {Promise<void>} Returns a promise that resolves when the todo is fetched.
+ */
 async function getTodo(ctx) {
   try {
     const { id } = ctx.params;
@@ -42,6 +54,11 @@ async function getTodo(ctx) {
   }
 }
 
+/**
+ * Save a new todo to the database.
+ * @param {*} ctx Koa context object
+ * @returns {Promise<void>} Returns a promise that resolves when the todo is saved.
+ */
 async function save(ctx) {
   try {
     const postData = ctx.request.body;
@@ -60,6 +77,11 @@ async function save(ctx) {
   }
 }
 
+/**
+ * Update an existing todo in the database.
+ * @param {*} ctx Koa context object
+ * @returns {Promise<void>} Returns a promise that resolves when the todo is updated.
+ */
 async function update(ctx) {
   try {
     const { id } = ctx.params;
@@ -79,6 +101,11 @@ async function update(ctx) {
   }
 }
 
+/**
+ * Remove a todo from the database.
+ * @param {*} ctx Koa context object
+ * @returns {Promise<void>} Returns a promise that resolves when the todo is removed.
+ */
 async function remove(ctx) {
   try {
     const { id } = ctx.params;
@@ -96,10 +123,79 @@ async function remove(ctx) {
   }
 }
 
+/**
+ * Remove multiple todos from the database.
+ * @param {*} ctx Koa context object
+ * @returns {Promise<void>} Returns a promise that resolves when the todos are removed.
+ */
+async function removeMany(ctx) {
+  try {
+    const { ids } = ctx.request.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new Error('Invalid or empty IDs array');
+    }
+
+    const { success, failed } = await removeTodos(ids);
+
+    if (failed.length > 0) {
+      ctx.status = 207;
+      return (ctx.body = {
+        success: true,
+        data: { success, failed },
+      });
+    }
+    ctx.status = 200;
+    return (ctx.body = {
+      success: true,
+      data: { success, failed },
+    });
+  } catch (e) {
+    return (ctx.body = {
+      success: false,
+      error: e.message,
+    });
+  }
+}
+
+/**
+ * Update multiple todos in the database.
+ * @param {*} ctx Koa context object
+ * @returns {Promise<void>} Returns a promise that resolves when the todos are updated.
+ */
+async function updateMany(ctx) {
+  try {
+    const updates = ctx.request.body;
+    if (!Array.isArray(updates) || updates.length === 0) {
+      throw new Error('Invalid or empty updates array');
+    }
+    const { success, failed } = await updateTodos(updates);
+
+    if (failed.length > 0) {
+      ctx.status = 207;
+      return (ctx.body = {
+        success: true,
+        data: { success, failed },
+      });
+    }
+    ctx.status = 200;
+    return (ctx.body = {
+      success: true,
+      data: { success, failed },
+    });
+  } catch (e) {
+    return (ctx.body = {
+      success: false,
+      error: e.message,
+    });
+  }
+}
+
 module.exports = {
   getTodos,
   getTodo,
   save,
   update,
   remove,
+  removeMany,
+  updateMany,
 };

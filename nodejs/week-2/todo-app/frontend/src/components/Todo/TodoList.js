@@ -78,12 +78,10 @@ export default function TodoList() {
     }
 
     updateManyTodos(todosToUpdate)
-      .then(updatedTodos => {
-        Array.isArray(updatedTodos) &&
-          updatedTodos.length !== 0 &&
-          updatedTodos.forEach(updatedTodo => {
-            update(updatedTodo);
-          });
+      .then(() => {
+        todosToUpdate.forEach(data => {
+          update(data);
+        });
         setSelectedItems([]);
         showToast({
           message: 'Todos updated successfully!',
