@@ -1,58 +1,43 @@
-const _ = require('lodash');
+const pick = require('./utils/pick');
 
 //1. Use this Fake JSON API: https://jsonplaceholder.typicode.com/
 const JSON_PLACEHOLDER_API = 'https://jsonplaceholder.typicode.com';
 
 (async () => {
-  //2. Get data from all users from API above. You will get a list of 10 users.
-  async function getUsers() {
-    const response = await fetch(`${JSON_PLACEHOLDER_API}/users`);
-    if (!response.ok) {
-      return [];
-      // throw new Error('Failed to fetch users');
+  async function getApi(url, defaultValue = []) {
+    try {
+      const response = await fetch(`${JSON_PLACEHOLDER_API}${url}`);
+      if (!response.ok) {
+        return defaultValue;
+      }
+      return await response.json();
+    } catch (error) {
+      return defaultValue;
     }
-    return await response.json();
   }
 
-  const users = await getUsers();
+  //2. Get data from all users from API above. You will get a list of 10 users.
+  const users = await getApi('/users');
   console.log('2. Users:', users);
 
   //3. Get all the posts and comments from the API. Map the data with the users array
-  async function getPosts() {
-    const response = await fetch(`${JSON_PLACEHOLDER_API}/posts`);
-    if (!response.ok) {
-      return [];
-      // throw new Error('Failed to fetch posts');
-    }
-    return await response.json();
-  }
-
-  async function getComments() {
-    const response = await fetch(`${JSON_PLACEHOLDER_API}/comments`);
-    if (!response.ok) {
-      return [];
-      // throw new Error('Failed to fetch comments');
-    }
-    return await response.json();
-  }
-
   async function getUsersWithPostsAndComments() {
     const [users, posts, comments] = await Promise.all([
-      getUsers(),
-      getPosts(),
-      getComments(),
+      getApi('/users'),
+      getApi('/posts'),
+      getApi('/comments'),
     ]);
 
     return users.map(user => {
       const userPosts = posts
         .filter(post => post.userId === user.id)
-        .map(post => _.pick(post, ['id', 'title', 'body']));
+        .map(post => pick(post, ['id', 'title', 'body']));
 
       const userComments = comments
         .filter(comment => userPosts.some(post => post.id === comment.postId))
-        .map(comment => _.pick(comment, ['id', 'postId', 'name', 'body']));
+        .map(comment => pick(comment, ['id', 'postId', 'name', 'body']));
 
-      return _.pick(
+      return pick(
         {
           ...user,
           posts: userPosts,
@@ -82,7 +67,7 @@ const JSON_PLACEHOLDER_API = 'https://jsonplaceholder.typicode.com';
   async function getUsersWithPostAndCommentCounts() {
     const users = await getUsersWithPostsAndComments();
     return users.map(user =>
-      _.pick(
+      pick(
         {
           ...user,
           postsCount: user.posts.length,
@@ -174,7 +159,7 @@ const JSON_PLACEHOLDER_API = 'https://jsonplaceholder.typicode.com';
     return {
       ...post,
       comments: comments.map(comment =>
-        _.pick(comment, ['postId', 'id', 'name', 'email', 'body'])
+        pick(comment, ['postId', 'id', 'name', 'email', 'body'])
       ),
     };
   }

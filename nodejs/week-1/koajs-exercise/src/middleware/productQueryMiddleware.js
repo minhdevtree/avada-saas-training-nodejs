@@ -1,6 +1,9 @@
-// limit: number of products to return
-// sort: sorting order (asc|desc)
-
+/**
+ * Middleware to process product query parameters with default values.
+ * It sets the limit to 5 and sort order to 'asc' by default.
+ * @param {*} ctx Koa context
+ * @param {*} next Next middleware function
+ */
 async function productQueryMiddleware(ctx, next) {
   const { limit, sort } = ctx.query;
 

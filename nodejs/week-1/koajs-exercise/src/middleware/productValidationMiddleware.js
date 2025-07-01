@@ -1,5 +1,11 @@
 const yup = require('yup');
 
+/**
+ * Middleware to validate product data.
+ * @param {*} validationType Type of validation ('create' or 'update'). Defaults to 'update'.
+ * @returns {Function} Middleware function
+ * @throws {Error} If validation fails, responds with 400 status and error details.
+ */
 function createProductValidationMiddleware(validationType = 'update') {
   return async function productValidationMiddleware(ctx, next) {
     try {

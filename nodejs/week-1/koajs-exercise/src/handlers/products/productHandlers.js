@@ -1,15 +1,20 @@
 const {
-  getAll: getAllProducts,
+  getMany,
   getOne: getOneProduct,
   add: addProduct,
   update: updateProduct,
   remove: removeProduct,
 } = require('../../database/productRepository');
 
+/**
+ * Get products
+ * @param {*} ctx Koa context
+ * @returns {Promise<void>}
+ */
 async function getProducts(ctx) {
   try {
     const { limit, sort } = ctx.query;
-    const products = getAllProducts(limit, sort);
+    const products = getMany(limit, sort);
 
     ctx.body = {
       products,
@@ -24,6 +29,11 @@ async function getProducts(ctx) {
   }
 }
 
+/**
+ * Get product by ID
+ * @param {*} ctx Koa context
+ * @returns {Promise<void>}
+ */
 async function getProduct(ctx) {
   try {
     const { id } = ctx.params;
@@ -45,6 +55,11 @@ async function getProduct(ctx) {
   }
 }
 
+/**
+ * Save a new product
+ * @param {*} ctx Koa context
+ * @returns {Promise<void>}
+ */
 async function save(ctx) {
   try {
     const postData = ctx.request.body;
@@ -62,6 +77,11 @@ async function save(ctx) {
   }
 }
 
+/**
+ * Update a product by ID
+ * @param {*} ctx Koa context
+ * @returns {Promise<void>}
+ */
 async function update(ctx) {
   try {
     const { id } = ctx.params;
@@ -80,6 +100,11 @@ async function update(ctx) {
   }
 }
 
+/**
+ * Remove a product by ID
+ * @param {*} ctx Koa context
+ * @returns {Promise<void>}
+ */
 async function remove(ctx) {
   try {
     const { id } = ctx.params;
