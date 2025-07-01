@@ -2,6 +2,7 @@ import { Button, Modal, Spinner, TextField } from '@shopify/polaris';
 import { useState, useCallback } from 'react';
 import { useTodos } from '../../contexts/TodoContext';
 import { addTodo } from '../../actions/todoActions';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function CreateTodo() {
   const [active, setActive] = useState(false);
@@ -9,6 +10,7 @@ export default function CreateTodo() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const { add } = useTodos();
+  const { showToast } = useToast();
 
   const handleChange = useCallback(() => {
     setActive(!active);
@@ -42,9 +44,14 @@ export default function CreateTodo() {
       .then(newTodo => {
         add(newTodo);
         setActive(false);
+        showToast({ message: 'Todo created successfully!' });
       })
       .catch(err => {
-        setError(err.message || 'Failed to create todo');
+        showToast({
+          message: 'Failed to create todo',
+          error: true,
+        });
+        console.error('Error creating todo:', err);
       })
       .finally(() => {
         setTitle('');

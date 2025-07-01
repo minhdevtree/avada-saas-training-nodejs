@@ -58,6 +58,7 @@ export default function TodoList() {
   };
 
   const handleBulkCompletionUpdate = async isCompleted => {
+    setLoadingActions(true);
     const todosToUpdate = todos
       .filter(
         todo =>
@@ -68,7 +69,13 @@ export default function TodoList() {
         isCompleted,
       }));
 
-    if (todosToUpdate.length === 0) return;
+    if (todosToUpdate.length === 0) {
+      setLoadingActions(false);
+      showToast({
+        message: 'No todos selected or already in the desired state.',
+      });
+      return;
+    }
 
     updateManyTodos(todosToUpdate)
       .then(updatedTodos => {
@@ -88,6 +95,9 @@ export default function TodoList() {
           error: true,
         });
         console.error('Error updating todos:', err);
+      })
+      .finally(() => {
+        setLoadingActions(false);
       });
   };
 
@@ -110,6 +120,14 @@ export default function TodoList() {
       destructive: true,
       content: 'Delete',
       onAction: () => {
+        setLoadingActions(true);
+        if (selectedItems.length === 0) {
+          setLoadingActions(false);
+          showToast({
+            message: 'No todos selected for removal.',
+          });
+          return;
+        }
         removeManyTodos(selectedItems)
           .then(() => {
             setSelectedItems([]);
@@ -124,6 +142,9 @@ export default function TodoList() {
               error: true,
             });
             console.error('Error removing todos:', err);
+          })
+          .finally(() => {
+            setLoadingActions(false);
           });
       },
     },
