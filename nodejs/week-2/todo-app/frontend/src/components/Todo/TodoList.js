@@ -9,20 +9,29 @@ import {
 import { DeleteIcon } from '@shopify/polaris-icons';
 import { useTodos } from '../../contexts/TodoContext';
 import TodoItem from './TodoItem';
-import { removeTodo, updateTodo } from '../../actions/todoActions';
+import {
+  removeManyTodos,
+  removeTodo,
+  updateManyTodos,
+  updateTodo,
+} from '../../actions/todoActions';
+import { useToast } from '../../contexts/ToastContext';
 
 export default function TodoList() {
   const { todos, update, remove, loading } = useTodos();
   const [selectedItems, setSelectedItems] = useState([]);
   const [loadingActions, setLoadingActions] = useState(false);
+  const { showToast } = useToast();
 
   const handleCompleteTodo = async (id, isCompleted) => {
     setLoadingActions(true);
     updateTodo(id, { isCompleted })
       .then(updatedTodo => {
         update(updatedTodo);
+        showToast({ message: 'Todo updated successfully!' });
       })
       .catch(err => {
+        showToast({ message: 'Error updating todo', error: true });
         console.error('Error updating todo:', err);
       })
       .finally(() => {
@@ -37,10 +46,48 @@ export default function TodoList() {
         remove(id);
       })
       .catch(err => {
+        showToast({
+          message: 'Error removing todo',
+          error: true,
+        });
         console.error('Error remove todo:', err);
       })
       .finally(() => {
         setLoadingActions(false);
+      });
+  };
+
+  const handleBulkCompletionUpdate = async isCompleted => {
+    const todosToUpdate = todos
+      .filter(
+        todo =>
+          selectedItems.includes(todo.id) && todo.isCompleted !== isCompleted
+      )
+      .map(todo => ({
+        id: todo.id,
+        isCompleted,
+      }));
+
+    if (todosToUpdate.length === 0) return;
+
+    updateManyTodos(todosToUpdate)
+      .then(updatedTodos => {
+        Array.isArray(updatedTodos) &&
+          updatedTodos.length !== 0 &&
+          updatedTodos.forEach(updatedTodo => {
+            update(updatedTodo);
+          });
+        setSelectedItems([]);
+        showToast({
+          message: 'Todos updated successfully!',
+        });
+      })
+      .catch(err => {
+        showToast({
+          message: 'Error updating todos',
+          error: true,
+        });
+        console.error('Error updating todos:', err);
       });
   };
 
@@ -52,34 +99,32 @@ export default function TodoList() {
   const bulkActions = [
     {
       content: 'Complete',
-      onAction: async () => {
-        const promises = todos
-          .filter(todo => selectedItems.includes(todo.id) && !todo.isCompleted)
-          .map(async todo => await handleCompleteTodo(todo.id, true));
-        await Promise.all(promises);
-        setSelectedItems([]);
-      },
+      onAction: () => handleBulkCompletionUpdate(true),
     },
     {
       content: 'Incomplete',
-      onAction: async () => {
-        const promises = todos
-          .filter(todo => selectedItems.includes(todo.id) && todo.isCompleted)
-          .map(todo => handleCompleteTodo(todo.id, false));
-        await Promise.all(promises);
-        setSelectedItems([]);
-      },
+      onAction: () => handleBulkCompletionUpdate(false),
     },
     {
       icon: DeleteIcon,
       destructive: true,
       content: 'Delete',
       onAction: () => {
-        const promises = todos
-          .filter(todo => selectedItems.includes(todo.id))
-          .map(async todo => await handleRemoveTodo(todo.id));
-        Promise.all(promises);
-        setSelectedItems([]);
+        removeManyTodos(selectedItems)
+          .then(() => {
+            setSelectedItems([]);
+            selectedItems.forEach(id => remove(id));
+            showToast({
+              message: 'Todos removed successfully!',
+            });
+          })
+          .catch(err => {
+            showToast({
+              message: 'Error removing todos',
+              error: true,
+            });
+            console.error('Error removing todos:', err);
+          });
       },
     },
   ];

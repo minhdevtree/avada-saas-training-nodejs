@@ -41,3 +41,22 @@ export const removeTodo = async id => {
   });
   return result.data;
 };
+
+export const removeManyTodos = async ids => {
+  const result = await request(`${BASE_API_URL}/todos/removeMany`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  });
+  return result.data;
+};
+
+export const updateManyTodos = async updates => {
+  console.log('Updating many todos:', updates.length);
+  const result = await request(`${BASE_API_URL}/todos/updateMany`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(updates),
+  });
+  return result.data;
+};

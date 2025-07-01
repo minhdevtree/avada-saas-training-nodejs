@@ -4,8 +4,15 @@ const {
   add: addTodo,
   update: updateTodo,
   remove: removeTodo,
+  removeMany: removeTodos,
+  updateMany: updateTodos,
 } = require('../../database/todoRepository');
 
+/**
+ * Get all todos
+ * @param {*} ctx - Koa context object
+ * @return {Promise<void>}
+ */
 async function getTodos(ctx) {
   try {
     const todos = getAllTodos();
@@ -23,6 +30,11 @@ async function getTodos(ctx) {
   }
 }
 
+/**
+ * Get a todo by ID
+ * @param {*} ctx - Koa context object
+ * @returns {Promise<void>}
+ */
 async function getTodo(ctx) {
   try {
     const { id } = ctx.params;
@@ -42,6 +54,11 @@ async function getTodo(ctx) {
   }
 }
 
+/**
+ * Save a new todo
+ * @param {*} ctx - Koa context object
+ * @returns {Promise<void>}
+ */
 async function save(ctx) {
   try {
     const postData = ctx.request.body;
@@ -60,6 +77,11 @@ async function save(ctx) {
   }
 }
 
+/**
+ * Update a todo by ID
+ * @param {*} ctx - Koa context object
+ * @returns {Promise<void>}
+ */
 async function update(ctx) {
   try {
     const { id } = ctx.params;
@@ -79,6 +101,11 @@ async function update(ctx) {
   }
 }
 
+/**
+ * Remove a todo by ID
+ * @param {*} ctx - Koa context object
+ * @returns {Promise<void>}
+ */
 async function remove(ctx) {
   try {
     const { id } = ctx.params;
@@ -96,10 +123,62 @@ async function remove(ctx) {
   }
 }
 
+/**
+ * Remove multiple todos by their IDs
+ * @param {*} ctx - Koa context object
+ * @returns {Promise<void>}
+ */
+async function removeMany(ctx) {
+  try {
+    const { ids } = ctx.request.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new Error('Invalid or empty IDs array');
+    }
+    const removedTodos = removeTodos(ids);
+    ctx.status = 200;
+    return (ctx.body = {
+      success: true,
+      data: removedTodos,
+    });
+  } catch (e) {
+    return (ctx.body = {
+      success: false,
+      error: e.message,
+    });
+  }
+}
+
+/**
+ * Update multiple todos
+ * @param {*} ctx Koa context object
+ * @returns {Promise<void>}
+ */
+async function updateMany(ctx) {
+  try {
+    const updates = ctx.request.body;
+    if (!Array.isArray(updates) || updates.length === 0) {
+      throw new Error('Invalid or empty updates array');
+    }
+    const updatedTodos = updateTodos(updates);
+    ctx.status = 200;
+    return (ctx.body = {
+      success: true,
+      data: updatedTodos,
+    });
+  } catch (e) {
+    return (ctx.body = {
+      success: false,
+      error: e.message,
+    });
+  }
+}
+
 module.exports = {
   getTodos,
   getTodo,
   save,
   update,
   remove,
+  removeMany,
+  updateMany,
 };
