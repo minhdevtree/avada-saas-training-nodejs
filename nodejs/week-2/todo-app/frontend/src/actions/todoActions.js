@@ -10,7 +10,13 @@ import { BASE_API_URL } from '../config/link';
  */
 const request = async (url, options = {}, defaultResponse = null) => {
   try {
-    const response = await fetch(url, options);
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
     if (!response.ok) {
       const errorData = await response.json();
       if (!defaultResponse) {
@@ -33,7 +39,6 @@ const request = async (url, options = {}, defaultResponse = null) => {
 export const addTodo = async text => {
   const result = await request(`${BASE_API_URL}/todos`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text }),
   });
   return result.data;
@@ -48,7 +53,6 @@ export const addTodo = async text => {
 export const updateTodo = async (id, updatedFields) => {
   const result = await request(`${BASE_API_URL}/todos/${id}`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updatedFields),
   });
   return result.data;
@@ -74,7 +78,6 @@ export const removeTodo = async id => {
 export const removeManyTodos = async ids => {
   const result = await request(`${BASE_API_URL}/todos/removeMany`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ids }),
   });
   return result.data;
@@ -88,7 +91,6 @@ export const removeManyTodos = async ids => {
 export const updateManyTodos = async updates => {
   const result = await request(`${BASE_API_URL}/todos/updateMany`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updates),
   });
   return result.data;
