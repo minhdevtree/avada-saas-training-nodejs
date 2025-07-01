@@ -1,5 +1,13 @@
 import { BASE_API_URL } from '../config/link';
 
+/**
+ * Sends a request to the API.
+ * @param {*} url The URL to send
+ * @param {*} options The options to configure the request
+ * @param {*} defaultResponse The default response to return in case of an error
+ * @returns {Promise<any>} The response data from the API or the default response
+ * @throws {Error} If the request fails or the response is not ok
+ */
 const request = async (url, options = {}, defaultResponse = null) => {
   try {
     const response = await fetch(url, options);
@@ -17,6 +25,11 @@ const request = async (url, options = {}, defaultResponse = null) => {
   }
 };
 
+/**
+ * Add a new todo to the database.
+ * @param {*} text The text of the todo to add
+ * @returns {Promise<Object>} The response data
+ */
 export const addTodo = async text => {
   const result = await request(`${BASE_API_URL}/todos`, {
     method: 'POST',
@@ -26,6 +39,12 @@ export const addTodo = async text => {
   return result.data;
 };
 
+/**
+ * Update an existing todo in the database.
+ * @param {*} id The ID of the todo to update
+ * @param {*} updatedFields The fields to update in the todo
+ * @returns {Promise<Object>} The response data
+ */
 export const updateTodo = async (id, updatedFields) => {
   const result = await request(`${BASE_API_URL}/todos/${id}`, {
     method: 'PUT',
@@ -35,6 +54,11 @@ export const updateTodo = async (id, updatedFields) => {
   return result.data;
 };
 
+/**
+ * Remove a todo from the database.
+ * @param {*} id The ID of the todo to remove
+ * @returns {Promise<Object>} The response data
+ */
 export const removeTodo = async id => {
   const result = await request(`${BASE_API_URL}/todos/${id}`, {
     method: 'DELETE',
@@ -42,6 +66,11 @@ export const removeTodo = async id => {
   return result.data;
 };
 
+/**
+ * Remove multiple todos from the database.
+ * @param {*} ids The IDs of the todos to remove
+ * @returns {Promise<Object>} The response data
+ */
 export const removeManyTodos = async ids => {
   const result = await request(`${BASE_API_URL}/todos/removeMany`, {
     method: 'POST',
@@ -51,6 +80,11 @@ export const removeManyTodos = async ids => {
   return result.data;
 };
 
+/**
+ * Update multiple todos in the database.
+ * @param {*} updates The updates data to apply to the todos
+ * @returns {Promise<Object>} The response data
+ */
 export const updateManyTodos = async updates => {
   const result = await request(`${BASE_API_URL}/todos/updateMany`, {
     method: 'PUT',
