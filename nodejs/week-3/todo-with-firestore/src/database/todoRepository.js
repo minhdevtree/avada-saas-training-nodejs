@@ -1,5 +1,6 @@
 const { BATCH_SIZE } = require('../const/batch');
 const db = require('./firebase');
+const { Timestamp } = require('firebase-admin/firestore');
 
 const todosCollection = db.collection('todos');
 
@@ -10,6 +11,59 @@ const todosCollection = db.collection('todos');
 async function getAll() {
   const snapshot = await todosCollection.get();
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+}
+
+//https://firebase.google.com/docs/firestore/query-data/query-cursors
+/**
+ * Fetch many todos from the database with pagination.
+ * @param {*} limit The maximum number of todos to fetch, default is 10.
+ * @param {*} sort The sort order, either 'asc' or 'desc', default is 'desc'.
+ * @param {*} lastTimestamp The timestamp to start fetching from, default is the beginning of time.
+ * @returns {Promise<Array>} Returns a promise that resolves to an array of todo objects.
+ */
+async function getMany(limit = 10, sort = 'desc', lastTimestamp = null) {
+  let query = todosCollection.orderBy('createdAt', sort);
+
+  if (lastTimestamp) {
+    query = query.startAfter(lastTimestamp);
+  }
+
+  query = query.limit(limit);
+
+  const snapshot = await query.get();
+  const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+  let hasNext = false;
+  if (todos.length > 0) {
+    const lastDoc = snapshot.docs[snapshot.docs.length - 1];
+    const nextQuery = todosCollection
+      .orderBy('createdAt', sort)
+      .startAfter(lastDoc.get('createdAt'))
+      .limit(1);
+    const nextSnap = await nextQuery.get();
+    hasNext = !nextSnap.empty;
+  }
+
+  // let hasPrev = false;
+  // if (todos.length > 0 && lastTimestamp) {
+  //   const firstDoc = snapshot.docs[0];
+  //   const prevQuery = todosCollection
+  //     .orderBy('createdAt', sort)
+  //     .endBefore(firstDoc.get('createdAt'))
+  //     .limitToLast(1);
+  //   const prevSnap = await prevQuery.get();
+  //   hasPrev = !prevSnap.empty;
+  // }
+
+  return {
+    todos,
+    pagination: {
+      hasNext,
+      // hasPrev,
+      lastTimestamp:
+        todos.length > 0 ? todos[todos.length - 1].createdAt.toDate() : null,
+    },
+  };
 }
 
 /**
@@ -37,6 +91,7 @@ async function add(todo) {
   const docRef = await todosCollection.add({
     isCompleted: false,
     ...todo,
+    createdAt: Timestamp.now(),
   });
 
   const doc = await docRef.get();
@@ -166,6 +221,7 @@ async function updateMany(updates) {
 module.exports = {
   getOne,
   getAll,
+  getMany,
   add,
   update,
   remove,

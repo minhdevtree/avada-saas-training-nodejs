@@ -5,6 +5,8 @@ import {
   ResourceList,
   BlockStack,
   EmptyState,
+  InlineStack,
+  Button,
 } from '@shopify/polaris';
 import { DeleteIcon } from '@shopify/polaris-icons';
 import { useTodos } from '../../contexts/TodoContext';
@@ -18,7 +20,17 @@ import {
 import { useToast } from '../../contexts/ToastContext';
 
 export default function TodoList() {
-  const { todos, update, remove, loading } = useTodos();
+  const {
+    todos,
+    update,
+    remove,
+    loading,
+    hasNext,
+    loadMore,
+    setLoadMore,
+    setSort,
+    sort,
+  } = useTodos();
   const [selectedItems, setSelectedItems] = useState([]);
   const [loadingActions, setLoadingActions] = useState(false);
   const { showToast } = useToast();
@@ -161,7 +173,7 @@ export default function TodoList() {
   ) : undefined;
 
   return (
-    <BlockStack gap="400">
+    <div style={{ marginBottom: '20px' }}>
       <Card padding="0">
         <ResourceList
           emptyState={emptyStateMarkup}
@@ -172,9 +184,30 @@ export default function TodoList() {
           onSelectionChange={setSelectedItems}
           bulkActions={bulkActions}
           loading={loading || loadingActions}
+          sortOptions={[
+            { label: 'Newest ', value: 'desc' },
+            { label: 'Oldest ', value: 'asc' },
+          ]}
+          onSortChange={selected => {
+            setSort(selected);
+          }}
+          sortValue={sort}
         />
+        {hasNext && (
+          <div style={{ paddingBottom: '10px' }}>
+            <InlineStack gap="400" align="center">
+              <Button
+                onClick={() => setLoadMore(true)}
+                disabled={loading || loadMore}
+                loading={loadMore}
+              >
+                Load more
+              </Button>
+            </InlineStack>
+          </div>
+        )}
       </Card>
-    </BlockStack>
+    </div>
   );
 
   function renderItem(item) {

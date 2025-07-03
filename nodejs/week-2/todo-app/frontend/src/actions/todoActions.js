@@ -8,7 +8,7 @@ import { BASE_API_URL } from '../config/link';
  * @returns {Promise<any>} The response data from the API or the default response
  * @throws {Error} If the request fails or the response is not ok
  */
-const request = async (url, options = {}, defaultResponse = null) => {
+export const request = async (url, options = {}, defaultResponse = null) => {
   try {
     const response = await fetch(url, {
       ...options,
@@ -94,4 +94,29 @@ export const updateManyTodos = async updates => {
     body: JSON.stringify(updates),
   });
   return result.data;
+};
+
+/**
+ * Fetch todos from the API.
+ * @param {*} limit The maximum number of todos to fetch
+ * @param {*} sort The sort order for the todos
+ * @param {*} lastTimestamp The timestamp to fetch todos after
+ * @returns {Promise<Object>} The fetched todos
+ */
+export const getTodos = async (
+  limit = 10,
+  sort = 'desc',
+  lastTimestamp = null
+) => {
+  const url = new URL(`${BASE_API_URL}/todos`);
+  url.searchParams.append('limit', limit);
+  url.searchParams.append('sort', sort);
+  if (lastTimestamp) {
+    url.searchParams.append('lastTimestamp', lastTimestamp);
+  }
+  const result = await request(url.toString(), {
+    method: 'GET',
+  });
+
+  return result;
 };

@@ -1,5 +1,6 @@
 const {
   getAll: getAllTodos,
+  getMany: getManyTodos,
   getOne: getOneTodo,
   add: addTodo,
   update: updateTodo,
@@ -7,18 +8,27 @@ const {
   removeMany: removeTodos,
   updateMany: updateTodos,
 } = require('../../database/todoRepository');
+const { Timestamp } = require('firebase-admin/firestore');
 
 /**
- * Fetch all todos from the database.
+ * Fetch many todos from the database with pagination.
  * @param {*} ctx Koa context object
  * @returns {Promise<void>} Returns a promise that resolves when the todos are fetched.
  */
 async function getTodos(ctx) {
   try {
-    const todos = await getAllTodos();
-
+    const { limit, sort, lastTimestamp } = ctx.query;
+    const parseTimestamp = lastTimestamp
+      ? Timestamp.fromDate(new Date(lastTimestamp))
+      : null;
+    const { todos, pagination } = await getManyTodos(
+      +limit,
+      sort,
+      lastTimestamp ? parseTimestamp : null
+    );
     ctx.body = {
       todos,
+      pagination,
     };
   } catch (e) {
     ctx.status = 404;
