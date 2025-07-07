@@ -1,16 +1,25 @@
 import { Button, Modal, Spinner, TextField } from '@shopify/polaris';
 import { useState, useCallback } from 'react';
 import { useTodos } from '../../contexts/TodoContext';
-import { addTodo } from '../../actions/todoActions';
-import { useToast } from '../../contexts/ToastContext';
+import useCreateApi from '../../hooks/api/useCreateApi';
 
 export default function CreateTodo() {
   const [active, setActive] = useState(false);
   const [title, setTitle] = useState('');
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
   const { add } = useTodos();
-  const { showToast } = useToast();
+
+  const { creating, handleCreate } = useCreateApi({
+    url: '/todos',
+    successMsg: 'Todo created successfully!',
+    errorMsg: 'Failed to create todo',
+    successCallback: resp => {
+      console.log(resp.data);
+      add(resp.data);
+      setTitle('');
+      handleChange();
+    },
+  });
 
   const handleChange = useCallback(() => {
     setActive(!active);
@@ -39,28 +48,12 @@ export default function CreateTodo() {
       setError('Title must be at most 100 characters.');
       return;
     }
-    setLoading(true);
-    addTodo(title.trim())
-      .then(newTodo => {
-        add(newTodo);
-        setActive(false);
-        showToast({ message: 'Todo created successfully!' });
-      })
-      .catch(err => {
-        showToast({
-          message: 'Failed to create todo',
-          error: true,
-        });
-        console.error('Error creating todo:', err);
-      })
-      .finally(() => {
-        setTitle('');
-        setLoading(false);
-      });
+
+    handleCreate({ text: title.trim() });
   };
 
   const activator = (
-    <Button variant="primary" onClick={handleChange} disabled={loading}>
+    <Button variant="primary" onClick={handleChange} disabled={creating}>
       Create
     </Button>
   );
@@ -74,8 +67,8 @@ export default function CreateTodo() {
       primaryAction={{
         content: 'Add',
         onAction: handleAddTodo,
-        disabled: loading,
-        loading: loading && (
+        disabled: creating,
+        loading: creating && (
           <Spinner accessibilityLabel="Loading..." size="small" />
         ),
       }}

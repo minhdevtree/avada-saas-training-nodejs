@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useToast } from '../../contexts/ToastContext';
 import { BASE_API_URL } from '../../config/link';
 
-export default function useCreateApi({
+export default function useEditApi({
   url,
   fullResp = false,
   successCallback = () => {},
@@ -10,18 +10,18 @@ export default function useCreateApi({
   errorMsg = 'Failed to save',
 }) {
   const { showToast } = useToast();
-  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   /**
    * @param data
    * @returns {Promise<{success: boolean, error}>}
    */
-  const handleCreate = async data => {
+  const handleEdit = async data => {
     try {
-      setCreating(true);
+      setEditing(true);
       // const resp = await api(url, {body: data, method: 'POST'});
       const resp = await fetch(`${BASE_API_URL}${url}`, {
-        method: 'POST',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -40,9 +40,9 @@ export default function useCreateApi({
       showToast({ message: errorMsg, error: true });
       return fullResp ? { success: false, error: e.message } : false;
     } finally {
-      setCreating(false);
+      setEditing(false);
     }
   };
 
-  return { creating, handleCreate };
+  return { editing, handleEdit };
 }

@@ -2,30 +2,29 @@ import { useState } from 'react';
 import { useToast } from '../../contexts/ToastContext';
 import { BASE_API_URL } from '../../config/link';
 
-export default function useCreateApi({
+export default function useDeleteApi({
   url,
   fullResp = false,
   successCallback = () => {},
-  successMsg = 'Saved successfully',
-  errorMsg = 'Failed to save',
+  successMsg = 'Deleted successfully',
+  errorMsg = 'Failed to delete',
 }) {
   const { showToast } = useToast();
-  const [creating, setCreating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   /**
    * @param data
    * @returns {Promise<{success: boolean, error}>}
    */
-  const handleCreate = async data => {
+  const handleDelete = async () => {
     try {
-      setCreating(true);
+      setDeleting(true);
       // const resp = await api(url, {body: data, method: 'POST'});
       const resp = await fetch(`${BASE_API_URL}${url}`, {
-        method: 'POST',
+        method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
       });
       const result = await resp.json();
       if (result.success) {
@@ -40,9 +39,9 @@ export default function useCreateApi({
       showToast({ message: errorMsg, error: true });
       return fullResp ? { success: false, error: e.message } : false;
     } finally {
-      setCreating(false);
+      setDeleting(false);
     }
   };
 
-  return { creating, handleCreate };
+  return { deleting, handleDelete };
 }

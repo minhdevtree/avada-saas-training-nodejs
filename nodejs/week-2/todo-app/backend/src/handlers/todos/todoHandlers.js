@@ -21,10 +21,9 @@ async function getTodos(ctx) {
       todos,
     };
   } catch (e) {
-    ctx.status = 404;
+    ctx.status = 400;
     ctx.body = {
       success: false,
-      data: [],
       error: e.message,
     };
   }
@@ -44,9 +43,13 @@ async function getTodo(ctx) {
         todo: getCurrentTodo,
       });
     }
-    throw new Error('Todo Not Found with that id!');
-  } catch (e) {
     ctx.status = 404;
+    return (ctx.body = {
+      success: false,
+      error: 'Todo Not Found with that id!',
+    });
+  } catch (e) {
+    ctx.status = 400;
     return (ctx.body = {
       success: false,
       error: e.message,

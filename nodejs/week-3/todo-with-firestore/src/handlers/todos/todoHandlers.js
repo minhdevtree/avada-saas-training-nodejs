@@ -24,7 +24,7 @@ async function getTodos(ctx) {
     const { todos, pagination } = await getManyTodos(
       +limit,
       sort,
-      lastTimestamp ? parseTimestamp : null
+      parseTimestamp
     );
     ctx.body = {
       todos,
@@ -54,9 +54,13 @@ async function getTodo(ctx) {
         todo: getCurrentTodo,
       });
     }
-    throw new Error('Todo Not Found with that id!');
-  } catch (e) {
     ctx.status = 404;
+    return (ctx.body = {
+      success: false,
+      error: 'Todo Not Found with that id!',
+    });
+  } catch (e) {
+    ctx.status = 400;
     return (ctx.body = {
       success: false,
       error: e.message,
@@ -80,6 +84,7 @@ async function save(ctx) {
       data: newTodo,
     });
   } catch (e) {
+    ctx.status = 400;
     return (ctx.body = {
       success: false,
       error: e.message,
@@ -104,6 +109,7 @@ async function update(ctx) {
       data: updatedTodo,
     });
   } catch (e) {
+    ctx.status = 400;
     return (ctx.body = {
       success: false,
       error: e.message,
@@ -126,6 +132,7 @@ async function remove(ctx) {
       data: removedTodo,
     });
   } catch (e) {
+    ctx.status = 400;
     return (ctx.body = {
       success: false,
       error: e.message,
@@ -141,6 +148,7 @@ async function remove(ctx) {
 async function removeMany(ctx) {
   try {
     const { ids } = ctx.request.body;
+    console.log('>>> ids', ids);
     if (!Array.isArray(ids) || ids.length === 0) {
       throw new Error('Invalid or empty IDs array');
     }
@@ -148,18 +156,20 @@ async function removeMany(ctx) {
     const { success, failed } = await removeTodos(ids);
 
     if (failed.length > 0) {
-      ctx.status = 207;
+      success.length > 0 ? (ctx.status = 207) : (ctx.status = 400);
       return (ctx.body = {
-        success: true,
+        success: success.length > 0 ? true : false,
         data: { success, failed },
       });
     }
+
     ctx.status = 200;
     return (ctx.body = {
       success: true,
       data: { success, failed },
     });
   } catch (e) {
+    ctx.status = 400;
     return (ctx.body = {
       success: false,
       error: e.message,
@@ -181,9 +191,9 @@ async function updateMany(ctx) {
     const { success, failed } = await updateTodos(updates);
 
     if (failed.length > 0) {
-      ctx.status = 207;
+      success.length > 0 ? (ctx.status = 207) : (ctx.status = 400);
       return (ctx.body = {
-        success: true,
+        success: success.length > 0 ? true : false,
         data: { success, failed },
       });
     }
@@ -193,6 +203,7 @@ async function updateMany(ctx) {
       data: { success, failed },
     });
   } catch (e) {
+    ctx.status = 400;
     return (ctx.body = {
       success: false,
       error: e.message,

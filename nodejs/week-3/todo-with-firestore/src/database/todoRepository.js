@@ -1,80 +1,50 @@
 const { BATCH_SIZE } = require('../const/batch');
+const { batchProcess } = require('../helpers/batchHelper');
+const { paginateCollection } = require('../helpers/paginationHelper');
 const db = require('./firebase');
 const { Timestamp } = require('firebase-admin/firestore');
 
-const todosCollection = db.collection('todos');
+const collection = db.collection('todos');
 
 /**
  * Fetch all todos from the database.
  * @returns {Promise<Array>} Returns a promise that resolves to an array of todo objects.
  */
 async function getAll() {
-  const snapshot = await todosCollection.get();
+  const snapshot = await collection.get();
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 }
 
-//https://firebase.google.com/docs/firestore/query-data/query-cursors
+// DONE: Should create helper file to make pagination
+
 /**
  * Fetch many todos from the database with pagination.
  * @param {*} limit The maximum number of todos to fetch, default is 10.
  * @param {*} sort The sort order, either 'asc' or 'desc', default is 'desc'.
- * @param {*} lastTimestamp The timestamp to start fetching from, default is the beginning of time.
+ * @param {*} lastTimestamp The timestamp to start fetching from, default is null.
  * @returns {Promise<Array>} Returns a promise that resolves to an array of todo objects.
  */
 async function getMany(limit = 10, sort = 'desc', lastTimestamp = null) {
-  let query = todosCollection.orderBy('createdAt', sort);
+  const result = await paginateCollection(collection, {
+    limit,
+    sort,
+    lastTimestamp,
+    keyName: 'todos',
+  });
 
-  if (lastTimestamp) {
-    query = query.startAfter(lastTimestamp);
-  }
-
-  query = query.limit(limit);
-
-  const snapshot = await query.get();
-  const todos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-  let hasNext = false;
-  if (todos.length > 0) {
-    const lastDoc = snapshot.docs[snapshot.docs.length - 1];
-    const nextQuery = todosCollection
-      .orderBy('createdAt', sort)
-      .startAfter(lastDoc.get('createdAt'))
-      .limit(1);
-    const nextSnap = await nextQuery.get();
-    hasNext = !nextSnap.empty;
-  }
-
-  // let hasPrev = false;
-  // if (todos.length > 0 && lastTimestamp) {
-  //   const firstDoc = snapshot.docs[0];
-  //   const prevQuery = todosCollection
-  //     .orderBy('createdAt', sort)
-  //     .endBefore(firstDoc.get('createdAt'))
-  //     .limitToLast(1);
-  //   const prevSnap = await prevQuery.get();
-  //   hasPrev = !prevSnap.empty;
-  // }
-
-  return {
-    todos,
-    pagination: {
-      hasNext,
-      // hasPrev,
-      lastTimestamp:
-        todos.length > 0 ? todos[todos.length - 1].createdAt.toDate() : null,
-    },
-  };
+  return result;
 }
 
+// TODO: Should defined type in ts file
 /**
  * Fetch a single todo by its ID.
  * @param {*} id The ID of the todo to fetch.
  * @returns {Promise<Object>} Returns a promise that resolves to a todo object.
  */
 async function getOne(id) {
-  const todo = await todosCollection.doc(id).get();
+  const todo = await collection.doc(id).get();
   if (!todo.exists) {
-    throw new Error('Todo not found');
+    return null;
   }
   return {
     id: todo.id,
@@ -88,7 +58,7 @@ async function getOne(id) {
  * @returns {Promise<Object>} Returns a promise that resolves to the added todo object.
  */
 async function add(todo) {
-  const docRef = await todosCollection.add({
+  const docRef = await collection.add({
     isCompleted: false,
     ...todo,
     createdAt: Timestamp.now(),
@@ -108,7 +78,7 @@ async function add(todo) {
  * @returns {Promise<Object>} Returns a promise that resolves to the updated todo object.
  */
 async function update(id, data) {
-  await todosCollection.doc(id).update(data);
+  await collection.doc(id).update(data);
 
   const updatedTodo = await getOne(id);
   return updatedTodo;
@@ -124,53 +94,22 @@ async function remove(id) {
   if (!deleteTodo) {
     throw new Error('Todo not found');
   }
-  await todosCollection.doc(id).delete();
+  await collection.doc(id).delete();
   return deleteTodo;
 }
 
-//https://firebase.google.com/docs/firestore/manage-data/transactions#batched-writes
+// DONE: Should make a helper file to write common code of remove many and update many
+
 /**
  * Remove multiple todos from the database.
  * @param {*} ids The IDs of the todos to remove.
  * @returns {Promise<Object>} Returns a promise that resolves to an object containing the success and failed IDs.
  */
 async function removeMany(ids) {
-  const batches = Math.ceil(ids.length / BATCH_SIZE);
-  const results = {
-    success: [],
-    failed: [],
-  };
-
-  for (let i = 0; i < batches; i++) {
-    const batch = db.batch();
-    const start = i * BATCH_SIZE;
-    const end = start + BATCH_SIZE;
-    const batchIds = ids.slice(start, end);
-
-    try {
-      for (const id of batchIds) {
-        const todoRef = todosCollection.doc(id);
-        batch.delete(todoRef);
-      }
-
-      await batch.commit();
-      results.success.push(...batchIds);
-    } catch (error) {
-      results.failed.push(...batchIds);
-    }
-  }
-
-  if (results.success.length === 0 && results.failed.length > 0) {
-    throw new Error('Failed to remove any todos.');
-  }
-
-  if (results.failed.length > 0) {
-    console.warn(
-      `${results.success.length} deleted, ${results.failed.length} failed.`
-    );
-  }
-
-  return results;
+  return batchProcess(ids, BATCH_SIZE, (batch, id) => {
+    const ref = collection.doc(id);
+    batch.delete(ref);
+  });
 }
 
 /**
@@ -179,43 +118,11 @@ async function removeMany(ids) {
  * @returns {Promise<Object>} Returns a promise that resolves to an object containing the success and failed IDs.
  */
 async function updateMany(updates) {
-  const batches = Math.ceil(updates.length / BATCH_SIZE);
-  const results = {
-    success: [],
-    failed: [],
-  };
-
-  for (let i = 0; i < batches; i++) {
-    const batch = db.batch();
-    const start = i * BATCH_SIZE;
-    const end = start + BATCH_SIZE;
-    const batchUpdates = updates.slice(start, end);
-
-    try {
-      for (const { id, data } of batchUpdates) {
-        const todoRef = todosCollection.doc(id);
-        batch.update(todoRef, data);
-      }
-
-      await batch.commit();
-
-      results.success.push(...batchUpdates);
-    } catch (error) {
-      results.failed.push(...batchUpdates);
-    }
-  }
-
-  if (results.success.length === 0 && results.failed.length > 0) {
-    throw new Error('Failed to update any todos.');
-  }
-
-  if (results.failed.length > 0) {
-    console.warn(
-      `${results.success.length} updated, ${results.failed.length} failed.`
-    );
-  }
-
-  return results;
+  return batchProcess(updates, BATCH_SIZE, (batch, data) => {
+    const todoRef = collection.doc(data.id);
+    const { id, ...updateData } = data;
+    batch.update(todoRef, updateData);
+  });
 }
 
 module.exports = {
